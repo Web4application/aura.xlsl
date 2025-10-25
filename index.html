@@ -1,368 +1,1211 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AURA Core Dashboard</title>
-<style>
-@font-face {
-  font-family: 'CircularXXWeb-Bold';
-  src: url('fonts/CircularXXWeb-Bold.woff2') format('woff2');
-  font-weight: bold;
-  font-style: normal;
-  font-display: swap;
-}
-
-body, html {
-  margin:0; padding:0;
-  background:#01010a;
-  overflow:hidden;
-  font-family:'CircularXXWeb-Bold', monospace;
-}
-
-#dashboard { position:relative; width:100vw; height:100vh; }
-
-canvas { position:absolute; top:0; left:0; width:100%; height:100%; z-index:1; cursor:pointer; }
-
-#data-panels {
-  position:absolute;
-  bottom:20px;
-  left:20px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  z-index:10;
-}
-
-.panel {
-  background:rgba(0,0,0,0.6);
-  color:#0ff;
-  padding:10px 15px;
-  font-weight:bold;
-  border-radius:8px;
-  text-shadow:0 0 5px #0ff;
-  transition: transform 0.1s ease, background 0.3s ease;
-  position: relative;
-}
-
-.panel-chart { display:block; margin-top:5px; }
-
-#aura-panels {
-  position:absolute;
-  top:20px;
-  right:20px;
-  display:flex;
-  flex-direction:column;
-  gap:15px;
-  z-index:10;
-}
-
-.aura-panel {
-  background:rgba(0,0,0,0.5);
-  color:#0ff;
-  padding:12px 18px;
-  border-radius:10px;
-  text-shadow:0 0 5px #0ff;
-  position: relative;
-}
-
-.aura-panel canvas { position:absolute; bottom:2px; left:2px; width:calc(100%-4px); height:30px; }
-
-.tooltip {
-  position:absolute;
-  background:rgba(0,255,255,0.9);
-  color:#000;
-  padding:5px 8px;
-  font-size:12px;
-  border-radius:5px;
-  pointer-events:none;
-  opacity:0;
-  transition: opacity 0.2s ease;
-  z-index:20;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura-AgentHub - Multi-Agent AI Orchestration Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        dark: '#181818'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .agent-card {
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+        .agent-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .job-pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
 </head>
-<body>
+<body class="bg-white dark:bg-dark text-gray-900 dark:text-white">
+    <!-- Main Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-80 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold">Aura-AgentHub</h1>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">AI Orchestration Platform</p>
+                    </div>
+                </div>
+            </div>
 
-<div id="dashboard">
-  <canvas id="quantum-canvas"></canvas>
+            <!-- User Info -->
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium">Demo User</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">1,250 credits</p>
+                    </div>
+                </div>
+            </div>
 
-  <div id="data-panels">
-    <div class="panel" id="quantum-panel">
-      Quantum Activity: 0
-      <canvas class="panel-chart" width="120" height="40"></canvas>
+            <!-- Navigation -->
+            <div class="flex-1 p-4">
+                <nav class="space-y-2">
+                    <button onclick="showSection('agents')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                        <i class="fas fa-th-grid text-primary"></i>
+                        <span>Agent Gallery</span>
+                    </button>
+                    <button onclick="showSection('workspace')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                        <i class="fas fa-folder text-primary"></i>
+                        <span>Workspace</span>
+                    </button>
+                    <button onclick="showSection('jobs')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                        <i class="fas fa-tasks text-primary"></i>
+                        <span>Job History</span>
+                    </button>
+                    <button onclick="showSection('billing')" class="nav-btn w-full flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                        <i class="fas fa-credit-card text-primary"></i>
+                        <span>Billing</span>
+                    </button>
+                </nav>
+
+                <!-- Quick Actions -->
+                <div class="mt-8">
+                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Quick Actions</h3>
+                    <div class="space-y-2">
+                        <button onclick="openAgentForm('text2speech')" class="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                            <i class="fas fa-volume-up text-blue-500 mr-2"></i>
+                            Text to Speech
+                        </button>
+                        <button onclick="openAgentForm('videogen')" class="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                            <i class="fas fa-video text-purple-500 mr-2"></i>
+                            Generate Video
+                        </button>
+                        <button onclick="openAgentForm('imagegen')" class="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                            <i class="fas fa-image text-green-500 mr-2"></i>
+                            Create Image
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                    <span>v1.0.0</span>
+                    <button onclick="toggleTheme()" class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:inline"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col">
+            <!-- Top Bar -->
+            <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 id="section-title" class="text-2xl font-bold">Agent Gallery</h2>
+                        <p id="section-subtitle" class="text-gray-500 dark:text-gray-400">Choose an AI agent to complete your task</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="relative">
+                            <input type="text" placeholder="Search agents..." class="w-64 px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                        </div>
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>
+                            New Job
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="flex-1 overflow-hidden">
+                <!-- Agent Gallery Section -->
+                <div id="agents-section" class="h-full p-6 overflow-y-auto">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <!-- Text to Speech Agent -->
+                        <div class="agent-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 cursor-pointer" onclick="openAgentForm('text2speech')">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-volume-up text-blue-600 text-xl"></i>
+                                </div>
+                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-xs">Active</span>
+                            </div>
+                            <h3 class="text-lg font-semibold mb-2">Text to Speech</h3>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">Convert text to natural-sounding speech with multiple voices and languages</p>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">~5 credits per minute</span>
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-star text-yellow-400"></i>
+                                    <span>4.8</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Video Generation Agent -->
+                        <div class="agent-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 cursor-pointer" onclick="openAgentForm('videogen')">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-video text-purple-600 text-xl"></i>
+                                </div>
+                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-xs">Active</span>
+                            </div>
+                            <h3 class="text-lg font-semibold mb-2">Video Generator</h3>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">Create cinematic videos from text prompts with customizable styles and duration</p>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">~50 credits per video</span>
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-star text-yellow-400"></i>
+                                    <span>4.6</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Code Assistant Agent -->
+                        <div class="agent-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 cursor-pointer" onclick="openAgentForm('codeassist')">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-code text-indigo-600 text-xl"></i>
+                                </div>
+                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-xs">Active</span>
+                            </div>
+                            <h3 class="text-lg font-semibold mb-2">Code Assistant</h3>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">Generate, debug, and optimize code with AI-powered programming assistance</p>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">~10 credits per task</span>
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-star text-yellow-400"></i>
+                                    <span>4.9</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Image Generation Agent -->
+                        <div class="agent-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 cursor-pointer" onclick="openAgentForm('imagegen')">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-image text-green-600 text-xl"></i>
+                                </div>
+                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-xs">Active</span>
+                            </div>
+                            <h3 class="text-lg font-semibold mb-2">Image Generator</h3>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">Create stunning images from text descriptions with various artistic styles</p>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">~8 credits per image</span>
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-star text-yellow-400"></i>
+                                    <span>4.7</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Data Analysis Agent -->
+                        <div class="agent-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 cursor-pointer" onclick="openAgentForm('dataanalysis')">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-chart-bar text-orange-600 text-xl"></i>
+                                </div>
+                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-xs">Active</span>
+                            </div>
+                            <h3 class="text-lg font-semibold mb-2">Data Analyst</h3>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">Analyze datasets, generate insights, and create visualizations from your data</p>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">~15 credits per analysis</span>
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-star text-yellow-400"></i>
+                                    <span>4.5</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Music Generation Agent -->
+                        <div class="agent-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 cursor-pointer" onclick="openAgentForm('musicgen')">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="w-12 h-12 bg-pink-100 dark:bg-pink-900 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-music text-pink-600 text-xl"></i>
+                                </div>
+                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-xs">Active</span>
+                            </div>
+                            <h3 class="text-lg font-semibold mb-2">Music Generator</h3>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-4">Compose original music tracks with AI in various genres and styles</p>
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="text-gray-500 dark:text-gray-400">~25 credits per track</span>
+                                <div class="flex items-center space-x-1">
+                                    <i class="fas fa-star text-yellow-400"></i>
+                                    <span>4.4</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Featured Templates -->
+                    <div class="mt-12">
+                        <h3 class="text-xl font-semibold mb-6">Featured Templates</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white cursor-pointer hover:shadow-lg transition-shadow" onclick="useTemplate('podcast')">
+                                <h4 class="font-semibold">Podcast Episode</h4>
+                                <p class="text-sm opacity-90">Script + Voice + Music</p>
+                            </div>
+                            <div class="bg-gradient-to-r from-green-500 to-teal-600 rounded-lg p-4 text-white cursor-pointer hover:shadow-lg transition-shadow" onclick="useTemplate('explainer')">
+                                <h4 class="font-semibold">Explainer Video</h4>
+                                <p class="text-sm opacity-90">Script + Visuals + Voice</p>
+                            </div>
+                            <div class="bg-gradient-to-r from-orange-500 to-red-600 rounded-lg p-4 text-white cursor-pointer hover:shadow-lg transition-shadow" onclick="useTemplate('social')">
+                                <h4 class="font-semibold">Social Media Kit</h4>
+                                <p class="text-sm opacity-90">Images + Captions + Video</p>
+                            </div>
+                            <div class="bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg p-4 text-white cursor-pointer hover:shadow-lg transition-shadow" onclick="useTemplate('presentation')">
+                                <h4 class="font-semibold">AI Presentation</h4>
+                                <p class="text-sm opacity-90">Slides + Voice + Data Viz</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workspace Section -->
+                <div id="workspace-section" class="h-full p-6 overflow-y-auto hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                        <!-- File Manager -->
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                            <h3 class="text-lg font-semibold mb-4">File Manager</h3>
+                            <div class="space-y-3">
+                                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                                    <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                                    <p class="text-gray-500 dark:text-gray-400">Drag files here or click to upload</p>
+                                    <input type="file" class="hidden" id="file-upload" multiple>
+                                    <button onclick="document.getElementById('file-upload').click()" class="mt-2 px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-opacity-90">
+                                        Choose Files
+                                    </button>
+                                </div>
+                                <div class="space-y-2" id="file-list">
+                                    <div class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                                        <div class="flex items-center space-x-2">
+                                            <i class="fas fa-file-pdf text-red-500"></i>
+                                            <span class="text-sm">sample-data.csv</span>
+                                        </div>
+                                        <button class="text-red-500 hover:text-red-700">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Saved Prompts -->
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                            <h3 class="text-lg font-semibold mb-4">Saved Prompts</h3>
+                            <div class="space-y-3">
+                                <button class="w-full p-3 text-left bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                    <h4 class="font-medium text-sm">Product Demo Video</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Create a 30-second product showcase...</p>
+                                </button>
+                                <button class="w-full p-3 text-left bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                    <h4 class="font-medium text-sm">Newsletter Voice</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Professional female voice for newsletters...</p>
+                                </button>
+                                <button class="w-full p-3 text-left bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                    <h4 class="font-medium text-sm">Code Review</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Review this JavaScript function...</p>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                            <h3 class="text-lg font-semibold mb-4">Recent Activity</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <p class="text-sm font-medium">Image generated</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">2 minutes ago</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <p class="text-sm font-medium">TTS job completed</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">5 minutes ago</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                                    <div>
+                                        <p class="text-sm font-medium">Video rendering started</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">10 minutes ago</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Jobs Section -->
+                <div id="jobs-section" class="h-full p-6 overflow-y-auto hidden">
+                    <div class="space-y-6">
+                        <!-- Active Jobs -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Active Jobs</h3>
+                            <div class="space-y-4" id="active-jobs">
+                                <!-- Jobs will be dynamically added here -->
+                            </div>
+                        </div>
+
+                        <!-- Completed Jobs -->
+                        <div>
+                            <h3 class="text-lg font-semibold mb-4">Completed Jobs</h3>
+                            <div class="space-y-4" id="completed-jobs">
+                                <!-- Completed jobs will be shown here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Billing Section -->
+                <div id="billing-section" class="h-full p-6 overflow-y-auto hidden">
+                    <div class="max-w-4xl">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                                <h3 class="text-lg font-semibold mb-2">Current Balance</h3>
+                                <p class="text-3xl font-bold text-primary">1,250</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Credits available</p>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                                <h3 class="text-lg font-semibold mb-2">This Month</h3>
+                                <p class="text-3xl font-bold text-green-600">450</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Credits used</p>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                                <h3 class="text-lg font-semibold mb-2">Plan</h3>
+                                <p class="text-3xl font-bold text-purple-600">Pro</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">$49/month</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+                            <h3 class="text-lg font-semibold mb-4">Usage Breakdown</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <span>Video Generation</span>
+                                    <span class="font-medium">200 credits</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span>Image Generation</span>
+                                    <span class="font-medium">120 credits</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span>Text to Speech</span>
+                                    <span class="font-medium">80 credits</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span>Code Assistant</span>
+                                    <span class="font-medium">50 credits</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Job Status & Results -->
+        <div class="w-96 bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold">Job Status</h3>
+            </div>
+            <div class="flex-1 p-4 overflow-y-auto" id="job-status-panel">
+                <div class="text-center text-gray-500 dark:text-gray-400 mt-8">
+                    <i class="fas fa-tasks text-3xl mb-2"></i>
+                    <p>No active jobs</p>
+                    <p class="text-sm">Submit a task to see progress here</p>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="panel" id="spark-panel">
-      Active Sparks: 0
-      <canvas class="panel-chart" width="120" height="40"></canvas>
+
+    <!-- Agent Form Modal -->
+    <div id="agent-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-2xl mx-4 max-h-90vh overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h3 id="modal-title" class="text-xl font-semibold">Agent Configuration</h3>
+                <button onclick="closeAgentModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="modal-content">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+        </div>
     </div>
-    <div class="panel" id="node-panel">
-      Active Nodes: 0
-      <canvas class="panel-chart" width="120" height="40"></canvas>
-    </div>
-  </div>
-  
-<script>
-  class QuantumNode {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.active = Math.random() > 0.5;
-  }
 
-  toggle() {
-    this.active = !this.active;
-  }
+    <script>
+        // Dark mode handling
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
 
-  draw(ctx) {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, 10, 0, 2 * Math.PI);
-    ctx.fillStyle = this.active ? '#0ea5e9' : '#475569';
-    ctx.fill();
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.stroke();
-  }
-}
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
 
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const dataDisplay = document.getElementById('data-display');
+        // Navigation
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('[id$="-section"]').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Show selected section
+            document.getElementById(`${sectionName}-section`).classList.remove('hidden');
+            
+            // Update nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+            });
+            event.target.closest('.nav-btn').classList.add('bg-primary', 'text-white');
+            
+            // Update title
+            const titles = {
+                'agents': 'Agent Gallery',
+                'workspace': 'Workspace',
+                'jobs': 'Job History',
+                'billing': 'Billing & Credits'
+            };
+            const subtitles = {
+                'agents': 'Choose an AI agent to complete your task',
+                'workspace': 'Manage your files, prompts, and project assets',
+                'jobs': 'Track your job progress and download results',
+                'billing': 'Manage your subscription and usage'
+            };
+            
+            document.getElementById('section-title').textContent = titles[sectionName];
+            document.getElementById('section-subtitle').textContent = subtitles[sectionName];
+        }
 
-let nodes = [
-  new QuantumNode(100, 100),
-  new QuantumNode(200, 200),
-  new QuantumNode(300, 100),
-  new QuantumNode(400, 200)
-];
+        // Job management
+        let jobCounter = 0;
+        let activeJobs = new Map();
 
-let xlsData = generateXLSLData(10);
+        function createJob(agentType, agentName, inputs) {
+            const jobId = `job_${++jobCounter}`;
+            const job = {
+                id: jobId,
+                agentType,
+                agentName,
+                inputs,
+                status: 'queued',
+                progress: 0,
+                startTime: new Date(),
+                result: null
+            };
+            
+            activeJobs.set(jobId, job);
+            updateJobDisplay(job);
+            return jobId;
+        }
 
-function generateXLSLData(numRecords) {
-  const data = [];
-  for (let i = 0; i < numRecords; i++) {
-    data.push({
-      id: i,
-      quantumState: Math.random(),
-      nodeActivity: Math.random() > 0.5 ? 'active' : 'inactive',
-      timestamp: new Date().toISOString()
-    });
-  }
-  return data;
-}
+        function updateJobDisplay(job) {
+            const statusPanel = document.getElementById('job-status-panel');
+            
+            // Clear empty state if this is the first job
+            if (activeJobs.size === 1) {
+                statusPanel.innerHTML = '';
+            }
+            
+            const existingCard = document.getElementById(`job-card-${job.id}`);
+            if (existingCard) {
+                existingCard.remove();
+            }
+            
+            const jobCard = document.createElement('div');
+            jobCard.id = `job-card-${job.id}`;
+            jobCard.className = `bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4 ${job.status === 'in-progress' ? 'job-pulse' : ''}`;
+            
+            const statusColor = {
+                'queued': 'yellow',
+                'in-progress': 'blue',
+                'completed': 'green',
+                'error': 'red'
+            }[job.status];
+            
+            jobCard.innerHTML = `
+                <div class="flex items-start justify-between mb-3">
+                    <div>
+                        <h4 class="font-medium">${job.agentName}</h4>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">${job.id}</p>
+                    </div>
+                    <span class="px-2 py-1 bg-${statusColor}-100 dark:bg-${statusColor}-900 text-${statusColor}-800 dark:text-${statusColor}-200 rounded-full text-xs">
+                        ${job.status}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span>Progress</span>
+                        <span>${job.progress}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-primary h-2 rounded-full progress-bar" style="width: ${job.progress}%"></div>
+                    </div>
+                </div>
+                ${job.result ? `
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded p-3 mb-3">
+                        <div id="result-${job.id}"></div>
+                    </div>
+                ` : ''}
+                <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>Started: ${job.startTime.toLocaleTimeString()}</span>
+                    ${job.status === 'completed' && job.result ? `
+                        <button onclick="downloadResult('${job.id}')" class="text-primary hover:underline">
+                            <i class="fas fa-download mr-1"></i>Download
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            
+            statusPanel.insertBefore(jobCard, statusPanel.firstChild);
+            
+            if (job.result && job.result.type === 'image') {
+                const resultDiv = document.getElementById(`result-${job.id}`);
+                if (resultDiv) {
+                    resultDiv.innerHTML = `<img src="${job.result.url}" class="w-full rounded" alt="Generated image">`;
+                }
+            }
+        }
 
-function drawNodes() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  nodes.forEach(node => node.draw(ctx));
-  updateDataDisplay();
-}
+        function simulateJobProgress(jobId, agentType) {
+            const job = activeJobs.get(jobId);
+            if (!job) return;
+            
+            // Start the job
+            job.status = 'in-progress';
+            updateJobDisplay(job);
+            
+            // Simulate progress
+            const progressInterval = setInterval(() => {
+                job.progress += Math.random() * 20;
+                if (job.progress >= 100) {
+                    job.progress = 100;
+                    job.status = 'completed';
+                    clearInterval(progressInterval);
+                    
+                    // Mock result based on agent type
+                    switch (agentType) {
+                        case 'imagegen':
+                            job.result = {
+                                type: 'image',
+                                url: 'https://picsum.photos/400/300',
+                                filename: 'generated_image.png'
+                            };
+                            break;
+                        case 'text2speech':
+                            job.result = {
+                                type: 'audio',
+                                url: '#',
+                                filename: 'generated_speech.mp3'
+                            };
+                            break;
+                        default:
+                            job.result = {
+                                type: 'text',
+                                content: 'Task completed successfully!',
+                                filename: 'result.txt'
+                            };
+                    }
+                }
+                updateJobDisplay(job);
+            }, 1000);
+        }
 
-function updateDataDisplay() {
-  const activeNodes = nodes.filter(n => n.active).length;
-  dataDisplay.innerHTML = `Active Nodes: ${activeNodes} | Total Nodes: ${nodes.length}<br>`;
-  dataDisplay.innerHTML += `Sample XLSL Data: ${JSON.stringify(xlsData.slice(0,2))}`;
-}
+        // Poe API integration for real AI agent calls
+        async function callPoeAgent(agentType, inputs, jobId) {
+            try {
+                let botMention = '';
+                let prompt = '';
+                
+                switch (agentType) {
+                    case 'text2speech':
+                        botMention = '@ElevenLabs-v2.5-Turbo';
+                        prompt = `${inputs.text}${inputs.voice ? ` --voice ${inputs.voice}` : ''}`;
+                        break;
+                    case 'imagegen':
+                        botMention = '@GPT-Image-1';
+                        prompt = `${inputs.prompt}${inputs.aspect ? ` --aspect ${inputs.aspect}` : ''}${inputs.quality ? ` --quality ${inputs.quality}` : ''}`;
+                        break;
+                    case 'videogen':
+                        botMention = '@Runway-Gen-4-Turbo';
+                        prompt = `${inputs.prompt}${inputs.duration ? ` --duration ${inputs.duration}` : ''}${inputs.aspectRatio ? ` --aspect-ratio ${inputs.aspectRatio}` : ''}`;
+                        break;
+                    case 'codeassist':
+                        botMention = '@Claude-Sonnet-4';
+                        prompt = `${inputs.task}. Provide code in ${inputs.language || 'the appropriate language'}.`;
+                        break;
+                    case 'dataanalysis':
+                        botMention = '@Claude-Sonnet-4';
+                        prompt = `Analyze this data request: ${inputs.query}. Provide insights and suggest visualizations.`;
+                        break;
+                    case 'musicgen':
+                        botMention = '@Lyria';
+                        prompt = inputs.prompt;
+                        break;
+                    default:
+                        throw new Error('Unknown agent type');
+                }
 
-function teleport(node, targetX, targetY) {
-  let steps = 20;
-  let dx = (targetX - node.x) / steps;
-  let dy = (targetY - node.y) / steps;
+                // Register handler for this job
+                window.Poe.registerHandler(`job-handler-${jobId}`, (result, context) => {
+                    const job = activeJobs.get(jobId);
+                    if (!job) return;
 
-  function animate() {
-    if (steps > 0) {
-      node.x += dx;
-      node.y += dy;
-      steps--;
-      drawNodes();
-      requestAnimationFrame(animate);
-    }
-  }
-  animate();
-}
+                    const msg = result.responses[0];
+                    
+                    if (msg.status === "error") {
+                        job.status = 'error';
+                        job.result = { type: 'error', message: msg.statusText || 'An error occurred' };
+                        updateJobDisplay(job);
+                    } else if (msg.status === "incomplete") {
+                        job.status = 'in-progress';
+                        job.progress = Math.min(90, job.progress + 10);
+                        updateJobDisplay(job);
+                    } else if (msg.status === "complete") {
+                        job.status = 'completed';
+                        job.progress = 100;
+                        
+                        if (msg.attachments && msg.attachments.length > 0) {
+                            const attachment = msg.attachments[0];
+                            job.result = {
+                                type: attachment.mimeType.startsWith('image/') ? 'image' : 
+                                      attachment.mimeType.startsWith('audio/') ? 'audio' : 
+                                      attachment.mimeType.startsWith('video/') ? 'video' : 'file',
+                                url: attachment.url,
+                                filename: attachment.name,
+                                mimeType: attachment.mimeType
+                            };
+                        } else {
+                            job.result = {
+                                type: 'text',
+                                content: msg.content,
+                                filename: 'result.txt'
+                            };
+                        }
+                        updateJobDisplay(job);
+                    }
+                });
 
-// Event listeners
-canvas.addEventListener('click', (event) => {
-  const rect = canvas.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  teleport(nodes[0], x, y);
-});
+                await window.Poe.sendUserMessage(`${botMention} ${prompt}`, {
+                    handler: `job-handler-${jobId}`,
+                    stream: true,
+                    openChat: false,
+                    handlerContext: { jobId }
+                });
 
-// Update periodically
-setInterval(() => {
-  nodes.forEach(node => node.toggle());
-  drawNodes();
-}, 2000);
+            } catch (error) {
+                console.error('Error calling Poe agent:', error);
+                const job = activeJobs.get(jobId);
+                if (job) {
+                    job.status = 'error';
+                    job.result = { type: 'error', message: error.message };
+                    updateJobDisplay(job);
+                }
+            }
+        }
 
-// Initial draw
-drawNodes();
-</div>
-</div>
-  
-</body>
-  <div id="aura-panels">
-    <div class="aura-panel" id="dimensions-panel">
-      Dimensions: <span id="dimensions-value">0</span>
-      <canvas></canvas>
-    </div>
-    <div class="aura-panel" id="teleport-panel">
-      Teleport X/Y: <span id="teleport-value">0,0</span>
-      <canvas></canvas>
-    </div>
-    <div class="aura-panel" id="xlsl-panel">
-      XLSL Sheets: <span id="xlsl-value">0</span>
-      <canvas></canvas>
-    </div>
-  </div>
+        // Agent form functions
+        function openAgentForm(agentType) {
+            const modal = document.getElementById('agent-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalContent = document.getElementById('modal-content');
+            
+            const agentConfigs = {
+                text2speech: {
+                    title: 'Text to Speech Agent',
+                    icon: 'fa-volume-up',
+                    color: 'blue',
+                    form: `
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Text to Convert</label>
+                                <textarea id="tts-text" rows="4" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Enter the text you want to convert to speech..."></textarea>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Voice</label>
+                                    <select id="tts-voice" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="Sarah">Sarah (Female, US)</option>
+                                        <option value="George">George (Male, US)</option>
+                                        <option value="River">River (Neutral)</option>
+                                        <option value="Matilda">Matilda (Female, UK)</option>
+                                        <option value="Will">Will (Male, UK)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Speed</label>
+                                    <select id="tts-speed" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="normal">Normal</option>
+                                        <option value="slow">Slow</option>
+                                        <option value="fast">Fast</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Estimated cost: ~5 credits</span>
+                                <div class="flex space-x-3">
+                                    <button onclick="closeAgentModal()" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Cancel</button>
+                                    <button onclick="submitTTSJob()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90">Generate Speech</button>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                },
+                imagegen: {
+                    title: 'Image Generation Agent',
+                    icon: 'fa-image',
+                    color: 'green',
+                    form: `
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Image Description</label>
+                                <textarea id="img-prompt" rows="3" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Describe the image you want to generate..."></textarea>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Aspect Ratio</label>
+                                    <select id="img-aspect" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="auto">Auto</option>
+                                        <option value="1:1">Square (1:1)</option>
+                                        <option value="3:2">Landscape (3:2)</option>
+                                        <option value="2:3">Portrait (2:3)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Quality</label>
+                                    <select id="img-quality" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="high">High</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="low">Low</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Estimated cost: ~8 credits</span>
+                                <div class="flex space-x-3">
+                                    <button onclick="closeAgentModal()" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Cancel</button>
+                                    <button onclick="submitImageJob()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90">Generate Image</button>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                },
+                videogen: {
+                    title: 'Video Generation Agent',
+                    icon: 'fa-video',
+                    color: 'purple',
+                    form: `
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Video Description</label>
+                                <textarea id="video-prompt" rows="3" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Describe the video scene you want to create..."></textarea>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Duration</label>
+                                    <select id="video-duration" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="5">5 seconds</option>
+                                        <option value="10">10 seconds</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Aspect Ratio</label>
+                                    <select id="video-aspect" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="16:9">16:9 (Landscape)</option>
+                                        <option value="9:16">9:16 (Portrait)</option>
+                                        <option value="1:1">1:1 (Square)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Style</label>
+                                    <select id="video-style" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="cinematic">Cinematic</option>
+                                        <option value="realistic">Realistic</option>
+                                        <option value="animated">Animated</option>
+                                        <option value="artistic">Artistic</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Estimated cost: ~50 credits</span>
+                                <div class="flex space-x-3">
+                                    <button onclick="closeAgentModal()" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Cancel</button>
+                                    <button onclick="submitVideoJob()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90">Generate Video</button>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                },
+                codeassist: {
+                    title: 'Code Assistant Agent',
+                    icon: 'fa-code',
+                    color: 'indigo',
+                    form: `
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Coding Task</label>
+                                <textarea id="code-task" rows="3" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Describe what you want to code or the problem you need help with..."></textarea>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Programming Language</label>
+                                    <select id="code-language" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="javascript">JavaScript</option>
+                                        <option value="python">Python</option>
+                                        <option value="java">Java</option>
+                                        <option value="cpp">C++</option>
+                                        <option value="csharp">C#</option>
+                                        <option value="php">PHP</option>
+                                        <option value="go">Go</option>
+                                        <option value="rust">Rust</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Task Type</label>
+                                    <select id="code-type" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="generate">Generate Code</option>
+                                        <option value="debug">Debug/Fix</option>
+                                        <option value="optimize">Optimize</option>
+                                        <option value="explain">Explain Code</option>
+                                        <option value="test">Write Tests</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Estimated cost: ~10 credits</span>
+                                <div class="flex space-x-3">
+                                    <button onclick="closeAgentModal()" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Cancel</button>
+                                    <button onclick="submitCodeJob()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90">Get Code Help</button>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                },
+                dataanalysis: {
+                    title: 'Data Analysis Agent',
+                    icon: 'fa-chart-bar',
+                    color: 'orange',
+                    form: `
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Analysis Query</label>
+                                <textarea id="data-query" rows="3" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="What insights do you want from your data?"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Data Source</label>
+                                <select id="data-source" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                    <option value="upload">Upload File</option>
+                                    <option value="sample">Use Sample Data</option>
+                                    <option value="url">From URL</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Chart Type</label>
+                                    <select id="data-chart" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="auto">Auto-detect</option>
+                                        <option value="bar">Bar Chart</option>
+                                        <option value="line">Line Chart</option>
+                                        <option value="pie">Pie Chart</option>
+                                        <option value="scatter">Scatter Plot</option>
+                                        <option value="heatmap">Heatmap</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Output Format</label>
+                                    <select id="data-format" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="summary">Summary Report</option>
+                                        <option value="detailed">Detailed Analysis</option>
+                                        <option value="insights">Key Insights</option>
+                                        <option value="recommendations">Recommendations</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Estimated cost: ~15 credits</span>
+                                <div class="flex space-x-3">
+                                    <button onclick="closeAgentModal()" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Cancel</button>
+                                    <button onclick="submitDataJob()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90">Analyze Data</button>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                },
+                musicgen: {
+                    title: 'Music Generation Agent',
+                    icon: 'fa-music',
+                    color: 'pink',
+                    form: `
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Music Description</label>
+                                <textarea id="music-prompt" rows="3" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Describe the music you want to create (genre, mood, instruments, etc.)"></textarea>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Genre</label>
+                                    <select id="music-genre" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="pop">Pop</option>
+                                        <option value="rock">Rock</option>
+                                        <option value="jazz">Jazz</option>
+                                        <option value="classical">Classical</option>
+                                        <option value="electronic">Electronic</option>
+                                        <option value="ambient">Ambient</option>
+                                        <option value="cinematic">Cinematic</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Mood</label>
+                                    <select id="music-mood" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="upbeat">Upbeat</option>
+                                        <option value="calm">Calm</option>
+                                        <option value="energetic">Energetic</option>
+                                        <option value="melancholic">Melancholic</option>
+                                        <option value="dramatic">Dramatic</option>
+                                        <option value="mysterious">Mysterious</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Tempo</label>
+                                    <select id="music-tempo" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <option value="slow">Slow</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="fast">Fast</option>
+                                        <option value="variable">Variable</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">Estimated cost: ~25 credits</span>
+                                <div class="flex space-x-3">
+                                    <button onclick="closeAgentModal()" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">Cancel</button>
+                                    <button onclick="submitMusicJob()" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90">Generate Music</button>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                }
+            };
+            
+            const config = agentConfigs[agentType];
+            if (!config) return;
+            
+            modalTitle.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-${config.color}-100 dark:bg-${config.color}-900 rounded-lg flex items-center justify-center">
+                        <i class="fas ${config.icon} text-${config.color}-600"></i>
+                    </div>
+                    <span>${config.title}</span>
+                </div>
+            `;
+            
+            modalContent.innerHTML = config.form;
+            modal.classList.remove('hidden');
+        }
 
-  <div class="tooltip" id="tooltip"></div>
-</div>
+        function closeAgentModal() {
+            document.getElementById('agent-modal').classList.add('hidden');
+        }
 
-<script>
-// ----------------- Canvas Setup -----------------
-const canvas=document.getElementById('quantum-canvas');
-const ctx=canvas.getContext('2d');
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
+        // Job submission functions
+        function submitTTSJob() {
+            const text = document.getElementById('tts-text').value;
+            const voice = document.getElementById('tts-voice').value;
+            const speed = document.getElementById('tts-speed').value;
+            
+            if (!text.trim()) {
+                showAlert('Please enter text to convert to speech');
+                return;
+            }
+            
+            const jobId = createJob('text2speech', 'Text to Speech', { text, voice, speed });
+            callPoeAgent('text2speech', { text, voice, speed }, jobId);
+            closeAgentModal();
+        }
 
-// Panels & Charts
-const quantumPanel=document.getElementById('quantum-panel');
-const sparkPanel=document.getElementById('spark-panel');
-const nodePanel=document.getElementById('node-panel');
-const quantumChartCtx=quantumPanel.querySelector('canvas').getContext('2d');
-const sparkChartCtx=sparkPanel.querySelector('canvas').getContext('2d');
-const nodeChartCtx=nodePanel.querySelector('canvas').getContext('2d');
+        function submitImageJob() {
+            const prompt = document.getElementById('img-prompt').value;
+            const aspect = document.getElementById('img-aspect').value;
+            const quality = document.getElementById('img-quality').value;
+            
+            if (!prompt.trim()) {
+                showAlert('Please enter an image description');
+                return;
+            }
+            
+            const jobId = createJob('imagegen', 'Image Generator', { prompt, aspect, quality });
+            callPoeAgent('imagegen', { prompt, aspect, quality }, jobId);
+            closeAgentModal();
+        }
 
-const dimensionsPanel=document.getElementById('dimensions-panel');
-const teleportPanel=document.getElementById('teleport-panel');
-const xlslPanel=document.getElementById('xlsl-panel');
+        function submitVideoJob() {
+            const prompt = document.getElementById('video-prompt').value;
+            const duration = document.getElementById('video-duration').value;
+            const aspectRatio = document.getElementById('video-aspect').value;
+            const style = document.getElementById('video-style').value;
+            
+            if (!prompt.trim()) {
+                showAlert('Please enter a video description');
+                return;
+            }
+            
+            const jobId = createJob('videogen', 'Video Generator', { prompt, duration, aspectRatio, style });
+            callPoeAgent('videogen', { prompt, duration, aspectRatio }, jobId);
+            closeAgentModal();
+        }
 
-const dimensionsCanvas=dimensionsPanel.querySelector('canvas').getContext('2d');
-const teleportCanvas=teleportPanel.querySelector('canvas').getContext('2d');
-const xlslCanvas=xlslPanel.querySelector('canvas').getContext('2d');
+        function submitCodeJob() {
+            const task = document.getElementById('code-task').value;
+            const language = document.getElementById('code-language').value;
+            const type = document.getElementById('code-type').value;
+            
+            if (!task.trim()) {
+                showAlert('Please describe your coding task');
+                return;
+            }
+            
+            const jobId = createJob('codeassist', 'Code Assistant', { task, language, type });
+            callPoeAgent('codeassist', { task, language, type }, jobId);
+            closeAgentModal();
+        }
 
-const dimensionsValue=document.getElementById('dimensions-value');
-const teleportValue=document.getElementById('teleport-value');
-const xlslValue=document.getElementById('xlsl-value');
+        function submitDataJob() {
+            const query = document.getElementById('data-query').value;
+            const source = document.getElementById('data-source').value;
+            const chart = document.getElementById('data-chart').value;
+            const format = document.getElementById('data-format').value;
+            
+            if (!query.trim()) {
+                showAlert('Please enter your analysis query');
+                return;
+            }
+            
+            const jobId = createJob('dataanalysis', 'Data Analyst', { query, source, chart, format });
+            callPoeAgent('dataanalysis', { query, source, chart, format }, jobId);
+            closeAgentModal();
+        }
 
-const tooltip=document.getElementById('tooltip');
+        function submitMusicJob() {
+            const prompt = document.getElementById('music-prompt').value;
+            const genre = document.getElementById('music-genre').value;
+            const mood = document.getElementById('music-mood').value;
+            const tempo = document.getElementById('music-tempo').value;
+            
+            if (!prompt.trim()) {
+                showAlert('Please describe the music you want to create');
+                return;
+            }
+            
+            const finalPrompt = `${prompt}, ${genre} genre, ${mood} mood, ${tempo} tempo`;
+            const jobId = createJob('musicgen', 'Music Generator', { prompt: finalPrompt, genre, mood, tempo });
+            callPoeAgent('musicgen', { prompt: finalPrompt }, jobId);
+            closeAgentModal();
+        }
 
-// ----------------- Utils -----------------
-function random(min,max){return Math.random()*(max-min)+min;}
+        // Template functions
+        function useTemplate(templateType) {
+            const templates = {
+                podcast: () => {
+                    showAlert('Podcast template: This would set up a workflow combining script writing, text-to-speech, and music generation.');
+                },
+                explainer: () => {
+                    showAlert('Explainer video template: This would set up a workflow combining script writing, image generation, video creation, and voice narration.');
+                },
+                social: () => {
+                    showAlert('Social media kit template: This would generate multiple image formats and caption suggestions.');
+                },
+                presentation: () => {
+                    showAlert('AI presentation template: This would create slides with data visualizations and voice narration.');
+                }
+            };
+            
+            const template = templates[templateType];
+            if (template) {
+                template();
+            }
+        }
 
-// ----------------- Quantum Nodes & Sparks -----------------
-let nodes=[], sparks=[], arcs=[], trails=[];
-const maxNodes=10, maxSparks=120, maxArcs=5;
-for(let i=0;i<maxNodes;i++){
-  nodes.push({x:random(50,canvas.width-50),y:random(50,canvas.height-50),radius:random(8,16),glow:0, energy: random(1,100)});
-}
+        // Utility functions
+        function showAlert(message) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-sm w-full mx-4">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                            <i class="fas fa-info text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold">Information</h3>
+                    </div>
+                    <p class="text-gray-700 dark:text-gray-300 mb-4">${message}</p>
+                    <div class="flex justify-end">
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90" onclick="this.closest('.fixed').remove()">OK</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
 
-class Spark{
-  constructor(x,y,target){this.x=x; this.y=y; this.target=target; this.speed=random(0.01,0.03);}
-  update(){const dx=this.target.x-this.x; const dy=this.target.y-this.y; this.x+=dx*this.speed; this.y+=dy*this.speed;}
-  draw(){ const grad=ctx.createRadialGradient(this.x,this.y,0,this.x,this.y,6); grad.addColorStop(0,'#0ff'); grad.addColorStop(1,'rgba(0,255,255,0)'); ctx.beginPath(); ctx.arc(this.x,this.y,2,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill(); }
-}
+        function downloadResult(jobId) {
+            const job = activeJobs.get(jobId);
+            if (!job || !job.result) return;
+            
+            if (job.result.url && job.result.url !== '#') {
+                window.open(job.result.url, '_blank');
+            } else {
+                showAlert('Download functionality would be implemented here in a production environment.');
+            }
+        }
 
-class Arc{
-  constructor(a,b){this.a=a; this.b=b; this.life=random(30,60);}
-  update(){this.life--; return this.life>0;}
-  draw(){ const grad=ctx.createLinearGradient(this.a.x,this.a.y,this.b.x,this.b.y); grad.addColorStop(0,'#0ff'); grad.addColorStop(1,'rgba(0,255,255,0)'); ctx.strokeStyle=grad; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(this.a.x,this.a.y); const midX=(this.a.x+this.b.x)/2 + random(-20,20); const midY=(this.a.y+this.b.y)/2 + random(-20,20); ctx.quadraticCurveTo(midX,midY,this.b.x,this.b.y); ctx.stroke(); }
-}
-
-// Trails for teleport
-class Trail{constructor(x,y){this.x=x; this.y=y; this.alpha=1;} update(){this.alpha-=0.02;} draw(){ctx.beginPath(); ctx.arc(this.x,this.y,3,0,Math.PI*2); ctx.fillStyle=`rgba(0,255,255,${this.alpha})`; ctx.fill();}}
-function generateSparks(){ if(sparks.length<maxSparks){ const node=nodes[Math.floor(Math.random()*nodes.length)]; sparks.push(new Spark(random(0,canvas.width),random(0,canvas.height),node)); } }
-function generateArcs(){ if(arcs.length<maxArcs){ const a=nodes[Math.floor(Math.random()*nodes.length)]; let b=nodes[Math.floor(Math.random()*nodes.length)]; if(a!==b) arcs.push(new Arc(a,b)); } }
-
-// ----------------- Panels Update -----------------
-const chartData={quantum:[], sparks:[], nodes:[], dimensions:[], teleport:[], xlsl:[]}, maxPoints=50;
-function drawMiniChart(ctx,data){
-  ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); ctx.beginPath();
-  data.forEach((v,i)=>{ const x=i*(ctx.canvas.width/maxPoints); const y=ctx.canvas.height-(v/50*ctx.canvas.height); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);});
-  ctx.strokeStyle='#0ff'; ctx.lineWidth=1.2; ctx.stroke();
-}
-function updatePanels(){
-  quantumPanel.textContent=`Quantum Activity: ${nodes.length*2}`;
-  sparkPanel.textContent=`Active Sparks: ${sparks.length}`;
-  nodePanel.textContent=`Active Nodes: ${nodes.length}`;
-
-  chartData.quantum.push(nodes.length*2); chartData.sparks.push(sparks.length); chartData.nodes.push(nodes.length);
-  if(chartData.quantum.length>maxPoints) chartData.quantum.shift(); if(chartData.sparks.length>maxPoints) chartData.sparks.shift(); if(chartData.nodes.length>maxPoints) chartData.nodes.shift();
-
-  drawMiniChart(quantumChartCtx,chartData.quantum);
-  drawMiniChart(sparkChartCtx,chartData.sparks);
-  drawMiniChart(nodeChartCtx,chartData.nodes);
-
-  // Aura Panels dynamic values
-  const dimVal=(Math.sin(Date.now()*0.001)*10 + 50).toFixed(2);
-  dimensionsValue.textContent=dimVal;
-  chartData.dimensions.push(dimVal); if(chartData.dimensions.length>maxPoints) chartData.dimensions.shift();
-  drawMiniChart(dimensionsCanvas,chartData.dimensions);
-
-  const teleX=(Math.sin(Date.now()*0.002)*100).toFixed(1); const teleY=(Math.cos(Date.now()*0.002)*100).toFixed(1);
-  teleportValue.textContent=`${teleX},${teleY}`;
-  chartData.teleport.push(parseFloat(teleX)); if(chartData.teleport.length>maxPoints) chartData.teleport.shift();
-  drawMiniChart(teleportCanvas,chartData.teleport);
-
-  const xlslVal=Math.floor(Math.random()*1000);
-  xlslValue.textContent=xlslVal;
-  chartData.xlsl.push(xlslVal); if(chartData.xlsl.length>maxPoints) chartData.xlsl.shift();
-  drawMiniChart(xlslCanvas,chartData.xlsl);
-}
-
-// ----------------- Background & Animate -----------------
-function drawBackground(){ const t=Date.now()*0.002; const grd=ctx.createRadialGradient(canvas.width/2,canvas.height/2,0,canvas.width/2,canvas.height/2,canvas.width/2); grd.addColorStop(0,`rgba(0,10,20,${0.05+0.05*Math.sin(t)})`); grd.addColorStop(1,'rgba(0,0,0,0.8)'); ctx.fillStyle=grd; ctx.fillRect(0,0,canvas.width,canvas.height);}
-
-function drawConnections(){ for(let i=0;i<nodes.length;i++){ for(let j=i+1;j<nodes.length;j++){ const dx=nodes[j].x-nodes[i].x, dy=nodes[j].y-nodes[i].y; const dist=Math.hypot(dx,dy); if(dist<200){ ctx.strokeStyle=`rgba(0,255,255,${1-dist/200})`; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke(); }}}}
-
-  function generateXLSLData(numRecords) {
-  const data = [];
-  for (let i = 0; i < numRecords; i++) {
-    data.push({
-      id: i,
-      quantumState: Math.random(),
-      nodeActivity: Math.random() > 0.5 ? 'active' : 'inactive',
-      timestamp: new Date().toISOString()
-    });
-  }
-  return data;
-}
-
-const xlsData = generateXLSLData(10);
-console.log(xlsData);
-function animate(){
-  drawBackground();
-  drawConnections();
-  nodes.forEach(n=>{ n.glow=0.5+Math.sin(Date.now()*0.005+n.x)*0.5; ctx.beginPath(); ctx.arc(n.x,n.y,n.radius,0,Math.PI*2); ctx.fillStyle=`rgba(0,255,255,${n.glow})`; ctx.fill(); });
-  for(let i=sparks.length-1;i>=0;i--){ sparks[i].update(); sparks[i].draw(); if(Math.hypot(sparks[i].x-sparks[i].target.x,sparks[i].y-sparks[i].target.y)<5) sparks.splice(i,1);}
-  generateSparks(); generateArcs(); for(let i=arcs.length-1;i>=0;i--){ if(!arcs[i].update()) arcs.splice(i,1); else arcs[i].draw();}
-  // Draw trails
-  for(let i=trails.length-1;i>=0;i--){ trails[i].update(); trails[i].draw(); if(trails[i].alpha<=0) trails.splice(i,1);}
-  updatePanels();
-  requestAnimationFrame(animate);
-}
-animate();
-
-// ----------------- Interactivity -----------------
-canvas.addEventListener('mousemove', e=>{
-  let found=false;
-  nodes.forEach(n=>{ const dx=e.clientX-n.x, dy=e.clientY-n.y; if(Math.hypot(dx,dy)<n.radius){ tooltip.style.left=(n.x+10)+'px'; tooltip.style.top=(n.y+10)+'px'; tooltip.innerHTML=`Node Energy: ${n.energy.toFixed(1)}<br>Radius: ${n.radius.toFixed(1)}`; tooltip.style.opacity=1; found=true; } });
-  if(!found) tooltip.style.opacity=0;
-});
-
-canvas.addEventListener('click', e=>{
-  teleportValue.textContent=`${e.clientX},${e.clientY}`;
-  for(let i=0;i<30;i++){ sparks.push(new Spark(e.clientX+random(-50,50), e.clientY+random(-50,50), {x:e.clientX, y:e.clientY})); trails.push(new Trail(e.clientX+random(-50,50), e.clientY+random(-50,50))); }
-});
-
-window.addEventListener('resize',()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
-setInterval(() => {
-  // Update data or visuals
-  nodes.forEach(node => {
-    node.active = !node.active;
-  });
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  nodes.forEach(node => node.draw(ctx));
-}, 1000);
-</script>
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set initial active nav button
+            document.querySelector('.nav-btn').classList.add('bg-primary', 'text-white');
+        });
+    </script>
 </body>
 </html>
