@@ -1,3 +1,6 @@
+import openpyxl
+import data
+from simulation_problems.to_excel import writer,sheet_name
 from project_pilot_ai.task_extractor import TaskExtractor
 from project_pilot_ai.repo_analyzer import RepoAnalyzer
 from project_pilot_ai.github_agent import GitHubAgent
