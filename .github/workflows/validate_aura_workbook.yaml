@@ -27,8 +27,11 @@ jobs:
       - name: Run workbook validation
         run: |
           pytest -q
-
+          pytest -ra
+          
       - name: Show workbook validation report (if present)
         if: always()
         run: |
+          pythin -m
           python -c "from src.file_loader import validate_workbook; import json; ok, r = validate_workbook('data/Aura.xlsl'); print(json.dumps(r, indent=2))"
+          python -i "from pd.ExcelWriter("/data/Aura.xlsx", engine="openpyxl", mode="a", if_sheet_exists="replace")
