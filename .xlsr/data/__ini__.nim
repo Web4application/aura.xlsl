@@ -14,7 +14,6 @@ with pd.ExcelWriter("/mnt/data/Aura.xlsx", engine="openpyxl", mode="a", if_sheet
         ]
     })
     pure_math.to_excel(writer, sheet_name="Pure_Mathematics", index=False)
-
     # Sheet 15: Further Mathematics
     further_math = pd.DataFrame({
         "Concept": ["Matrix Multiplication", "Eigenvalues", "Diff Eq"],
@@ -30,7 +29,6 @@ with pd.ExcelWriter("/mnt/data/Aura.xlsx", engine="openpyxl", mode="a", if_sheet
         ]
     })
     further_math.to_excel(writer, sheet_name="Further_Mathematics", index=False)
-
     # Sheet 16: Applied Physics
     applied_physics = pd.DataFrame({
         "Field": ["Mechanics", "Thermodynamics", "Electromagnetism", "Quantum Physics"],
@@ -48,7 +46,6 @@ with pd.ExcelWriter("/mnt/data/Aura.xlsx", engine="openpyxl", mode="a", if_sheet
         ]
     })
     applied_physics.to_excel(writer, sheet_name="Applied_Physics", index=False)
-
     # Sheet 17: Reasoning Logic
     reasoning_logic = pd.DataFrame({
         "Premise": ["All humans are mortal", "Socrates is a human", "If it rains, ground gets wet"],
@@ -56,7 +53,6 @@ with pd.ExcelWriter("/mnt/data/Aura.xlsx", engine="openpyxl", mode="a", if_sheet
         "Truth_Value": ["True", "True", "True"]
     })
     reasoning_logic.to_excel(writer, sheet_name="Reasoning_Logic", index=False)
-
     # Sheet 18: Simulation Problems
     simulation_problems = pd.DataFrame({
         "Problem": ["Projectile Motion", "Heat Transfer", "Quantum Tunneling"],
@@ -72,5 +68,4 @@ with pd.ExcelWriter("/mnt/data/Aura.xlsx", engine="openpyxl", mode="a", if_sheet
         ]
     })
     simulation_problems.to_excel(writer, sheet_name="Simulation_Problems", index=False)
-
-"/mnt/data/Aura.xlsx"
+showpage
