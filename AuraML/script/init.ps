@@ -1,0 +1,34 @@
+%!aura.xlsl
+%%Title: Mandelbrot Set Simulation
+/width 400 def /height 400 def
+/max_iter 30 def
+
+% Map pixel (x,y) to complex plane [-2, 1] and [-1.5, 1.5]
+/map_x { width div 3.0 mul 2.0 sub } def
+/map_y { height div 3.0 mul 1.5 sub } def
+
+0 1 width {
+    /ix exch def
+    0 1 height {
+        /iy exch def
+        /cx ix map_x def /cy iy map_y def
+        /zx 0 def /zy 0 def /iter 0 def
+        
+        { % Loop for iterations
+            /zx2 zx zx mul def /zy2 zy zy mul def
+            zx2 zy2 add 4.0 gt { exit } if
+            iter max_iter ge { exit } if
+            
+            % Z = Z^2 + C -> (zx^2 - zy^2 + cx), (2*zx*zy + cy)
+            /zy_new 2 zx mul zy mul cy add def
+            /zx zx2 zy2 sub cx add def
+            /zy zy_new def
+            /iter iter 1 add def
+        } loop
+        
+        % Color based on iteration count
+        iter max_iter div setgray
+        ix iy moveto 1 1 rectfill
+    } for
+} for
+showpage
